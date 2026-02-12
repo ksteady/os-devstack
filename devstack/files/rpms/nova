@@ -1,0 +1,13 @@
+conntrack-tools
+curl
+ebtables
+iptables
+iputils
+kernel-modules # not:openEuler-22.03
+kpartx
+parted
+polkit
+rabbitmq-server # NOPRIME
+sqlite
+sudo
+xorriso

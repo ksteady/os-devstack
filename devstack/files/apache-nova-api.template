@@ -1,0 +1,23 @@
+Listen %PUBLICPORT%
+
+<VirtualHost *:%PUBLICPORT%>
+    WSGIDaemonProcess nova-api processes=%APIWORKERS% threads=1 user=%USER% display-name=%{GROUP} %VIRTUALENV%
+    WSGIProcessGroup nova-api
+    WSGIScriptAlias / %PUBLICWSGI%
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    ErrorLogFormat "%M"
+    ErrorLog /var/log/%APACHE_NAME%/nova-api.log
+    %SSLENGINE%
+    %SSLCERTFILE%
+    %SSLKEYFILE%
+</VirtualHost>
+
+Alias /compute %PUBLICWSGI%
+<Location /compute>
+    SetHandler wsgi-script
+    Options +ExecCGI
+    WSGIProcessGroup nova-api
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+</Location>

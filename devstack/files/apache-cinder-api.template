@@ -1,0 +1,18 @@
+Listen %PUBLICPORT%
+
+<VirtualHost *:%PUBLICPORT%>
+    WSGIDaemonProcess osapi_volume processes=%APIWORKERS% threads=1 user=%USER% display-name=%{GROUP} %VIRTUALENV%
+    WSGIProcessGroup osapi_volume
+    WSGIScriptAlias / %CINDER_BIN_DIR%/cinder-wsgi
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    ErrorLogFormat "%{cu}t %M"
+    ErrorLog /var/log/%APACHE_NAME%/c-api.log
+    %SSLENGINE%
+    %SSLCERTFILE%
+    %SSLKEYFILE%
+
+    <Directory %CINDER_BIN_DIR%>
+        Require all granted
+    </Directory>
+</VirtualHost>

@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# source openrc [username] [projectname]
+#
+# Configure a set of credentials for $PROJECT/$USERNAME:
+#   Set OS_PROJECT_NAME to override the default project 'demo'
+#   Set OS_USERNAME to override the default user name 'demo'
+#   Set ADMIN_PASSWORD to set the password for 'admin' and 'demo'
+
+if [[ -n "$1" ]]; then
+    OS_USERNAME=$1
+fi
+if [[ -n "$2" ]]; then
+    OS_PROJECT_NAME=$2
+fi
+
+# Find the other rc files
+RC_DIR=$(cd $(dirname "${BASH_SOURCE:-$0}") && pwd)
+
+# Import common functions
+source $RC_DIR/functions
+
+# Load local configuration
+source $RC_DIR/stackrc
+
+# Load the last env variables if available
+if [[ -r $RC_DIR/.stackenv ]]; then
+    source $RC_DIR/.stackenv
+    export OS_CACERT
+fi
+
+# Get some necessary configuration
+source $RC_DIR/lib/tls
+
+# Minimal configuration
+export OS_AUTH_TYPE=password
+export OS_PROJECT_NAME=${OS_PROJECT_NAME:-demo}
+export OS_USERNAME=${OS_USERNAME:-demo}
+export OS_PASSWORD=${ADMIN_PASSWORD:-secret}
+export OS_REGION_NAME=${REGION_NAME:-RegionOne}
+
+# Set the host API endpoint. This will default to HOST_IP if SERVICE_IP_VERSION
+# is 4, else HOST_IPV6 if it's 6. SERVICE_HOST may also be used to specify the
+# endpoint, which is convenient for some localrc configurations. Additionally,
+# some exercises call Glance directly. On a single-node installation, Glance
+# should be listening on a local IP address, depending on the setting of
+# SERVICE_IP_VERSION. If its running elsewhere, it can be set here.
+if [[ $SERVICE_IP_VERSION == 6 ]]; then
+    HOST_IPV6=${HOST_IPV6:-::1}
+    SERVICE_HOST=${SERVICE_HOST:-[$HOST_IPV6]}
+    GLANCE_HOST=${GLANCE_HOST:-[$HOST_IPV6]}
+else
+    HOST_IP=${HOST_IP:-127.0.0.1}
+    SERVICE_HOST=${SERVICE_HOST:-$HOST_IP}
+    GLANCE_HOST=${GLANCE_HOST:-$HOST_IP}
+fi
+
+# If you don't have a working .stackenv, this is the backup position
+KEYSTONE_BACKUP=$SERVICE_PROTOCOL://$SERVICE_HOST:5000
+KEYSTONE_SERVICE_URI=${KEYSTONE_SERVICE_URI:-$KEYSTONE_BACKUP}
+
+export OS_AUTH_URL=${OS_AUTH_URL:-$KEYSTONE_SERVICE_URI}
+
+export OS_USER_DOMAIN_ID=${OS_USER_DOMAIN_ID:-"default"}
+export OS_PROJECT_DOMAIN_ID=${OS_PROJECT_DOMAIN_ID:-"default"}
+
+# Set OS_CACERT to a default CA certificate chain if it exists.
+if [[ ! -v OS_CACERT ]] ; then
+    DEFAULT_OS_CACERT=$INT_CA_DIR/ca-chain.pem
+    # If the file does not exist, this may confuse preflight sanity checks
+    if [ -e $DEFAULT_OS_CACERT ] ; then
+        export OS_CACERT=$DEFAULT_OS_CACERT
+    fi
+fi
