@@ -154,17 +154,19 @@ function init_horizon {
     # and run_process
     sudo rm -f /var/log/$APACHE_NAME/horizon_*
 
-    # Setup alias for django-admin which could be different depending on distro
-    local django_admin
-    if type -p django-admin > /dev/null; then
-        django_admin=django-admin
+    # Setup alias for django-admin - use venv's django or python -m django
+    local django_cmd
+    if [[ -x "${DEVSTACK_VENV}/bin/django-admin" ]]; then
+        django_cmd=${DEVSTACK_VENV}/bin/django-admin
+    elif type -p django-admin > /dev/null; then
+        django_cmd=django-admin
     else
-        django_admin=django-admin.py
+        django_cmd="$PYTHON -m django"
     fi
 
     # These need to be run after horizon plugins are configured.
-    DJANGO_SETTINGS_MODULE=openstack_dashboard.settings $django_admin collectstatic --noinput
-    DJANGO_SETTINGS_MODULE=openstack_dashboard.settings $django_admin compress --force
+    DJANGO_SETTINGS_MODULE=openstack_dashboard.settings $django_cmd collectstatic --noinput
+    DJANGO_SETTINGS_MODULE=openstack_dashboard.settings $django_cmd compress --force
 
 }
 
